@@ -5,7 +5,7 @@ cargo emanate
 
 Cargo subcommand for multi-repository management and creation of application packages.
 
-This crate is work in progress and is not for production use.
+*This crate is work in progress and is not for production use.*
 
 ## Usage
 

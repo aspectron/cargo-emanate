@@ -1,15 +1,31 @@
 use crate::manifest::*;
 use crate::result::Result;
-use clap::{Parser,Subcommand,AppSettings};
+use clap::{Parser,Subcommand};
 use duct::cmd;
 
 mod error;
 mod result;
 mod manifest;
 
-#[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
-#[clap(setting = AppSettings::SubcommandRequiredElseHelp)]
+#[derive(Debug, Parser)]
+#[clap(name = "cargo")]
+#[clap(bin_name = "cargo")]
+#[clap(
+    // setting = AppSettings::SubcommandRequiredElseHelp,
+    setting = clap::AppSettings::DeriveDisplayOrder,
+    dont_collapse_args_in_usage = true,
+)]
+enum Cmd {
+    #[clap(name = "emanate")]
+    #[clap(about, author, version)]
+    #[clap(
+        setting = clap::AppSettings::DeriveDisplayOrder,
+    )]
+    Args(Args),
+}
+
+
+#[derive(Debug, clap::Args)]
 struct Args {
     #[clap(subcommand)]
     action : Action,
@@ -29,11 +45,11 @@ enum Action {
 }
 
 pub async fn async_main() -> Result<()> {
-
-    let args = Args::parse();
+    
+    let args = Cmd::parse();
     let manifest = Manifest::load().await?;
-
-    match args.action {
+    let action = match args { Cmd::Args(args) => args.action };
+    match action {
         Action::Clone => {
             for repository in manifest.repository.iter() {
                 cmd!("git","clone", &repository.url).run()?;
@@ -43,7 +59,8 @@ pub async fn async_main() -> Result<()> {
             match force {
                 true => {
                     for repository in manifest.repository.iter() {
-                        cmd!("rm -rf", repository.name()).run()?;
+                        println!("erasing: {}",repository.name());
+                        cmd!("rm","-rf", repository.name()).run()?;
                     }
                 },
                 false => {

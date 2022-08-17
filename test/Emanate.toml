@@ -1,0 +1,10 @@
+# [emanate]
+# type = "bundle"
+
+
+[[repository]]
+url = "https://github.com/oconnor663/duct.rs"
+
+[[repository]]
+url = "https://github.com/snapview/tungstenite-rs"
+

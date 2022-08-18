@@ -1,6 +1,3 @@
-# [emanate]
-# type = "bundle"
-
 
 [[repository]]
 url = "https://github.com/oconnor663/duct.rs"

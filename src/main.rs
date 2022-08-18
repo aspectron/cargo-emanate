@@ -35,6 +35,8 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Action {
+    /// List status of all repositories
+    Status,
     /// Clone repositories listed in the manifest
     Clone,
     /// Purge repositories liste in the manifest (requires force parameter)
@@ -52,7 +54,15 @@ pub async fn async_main() -> Result<()> {
     match action {
         Action::Clone => {
             for repository in manifest.repository.iter() {
-                cmd!("git","clone", &repository.url).run()?;
+                match &repository.branch {
+                    Some(branch) => {
+                        cmd!("git","clone","-b",branch, &repository.url).run()?;
+                    },
+                    None => {
+                        cmd!("git","clone", &repository.url).run()?;
+                    }
+
+                }
             }
         },
         Action::Purge { force } => {
@@ -68,6 +78,11 @@ pub async fn async_main() -> Result<()> {
                 }
             }
         },
+        Action::Status => {
+            for repository in manifest.repository.iter() {
+                println!("{}",repository.url);
+            }
+        }
     }
 
     Ok(())

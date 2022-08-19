@@ -2,6 +2,7 @@ use crate::manifest::*;
 use crate::result::Result;
 use clap::{Parser,Subcommand};
 use duct::cmd;
+use console::style;
 
 mod error;
 mod result;
@@ -54,14 +55,18 @@ pub async fn async_main() -> Result<()> {
     match action {
         Action::Clone => {
             for repository in manifest.repository.iter() {
-                match &repository.branch {
-                    Some(branch) => {
-                        cmd!("git","clone","-b",branch, &repository.url).run()?;
-                    },
-                    None => {
-                        cmd!("git","clone", &repository.url).run()?;
-                    }
+                if repository.exists() {
+                    println!("{} repository {} exists. skipping...",style("WARNING:").magenta(),style(repository.name()).cyan()); 
+                } else {
+                    match &repository.branch {
+                        Some(branch) => {
+                            cmd!("git","clone","-b",branch, &repository.url).run()?;
+                        },
+                        None => {
+                            cmd!("git","clone", &repository.url).run()?;
+                        }
 
+                    }
                 }
             }
         },

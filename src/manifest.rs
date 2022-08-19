@@ -1,6 +1,7 @@
 use std::env::current_dir;
 use serde_derive::Deserialize;
-use async_std::{fs::*, path::Path};
+use std::path::Path;
+use async_std::fs::*;
 use crate::result::Result;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -88,5 +89,9 @@ impl RepositoryConfig {
         } else {
             false
         }
+    }
+
+    pub fn exists(&self) -> bool {
+        Path::new(&self.name()).exists()
     }
 }

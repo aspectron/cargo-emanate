@@ -1,6 +1,6 @@
 [package]
 name = "cargo-emanate"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/aspectron/cargo-emanate"

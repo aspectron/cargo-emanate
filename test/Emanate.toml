@@ -2,6 +2,19 @@
 [[repository]]
 url = "https://github.com/oconnor663/duct.rs"
 
+
 [[repository]]
 url = "https://github.com/snapview/tungstenite-rs"
 
+
+[[build]]
+cmd = "ls -la"
+folder = "duct.rs"
+
+# [[build]]
+# cmd = "cargo build --release"
+# folder = "workflow"
+
+# [run]
+# cmd = "cargo run --release"
+# folder = "workflow" 

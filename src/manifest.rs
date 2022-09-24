@@ -10,6 +10,8 @@ pub struct Manifest {
     // pub emanate: EmanateConfig,
     // pub project : ProjectConfig,
     pub repository: Vec<RepositoryConfig>,
+    pub build: Option<Vec<BuildConfig>>,
+    pub run: Option<RunConfig>,
 }
 
 impl Manifest {
@@ -95,3 +97,25 @@ impl RepositoryConfig {
         Path::new(&self.name()).exists()
     }
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct BuildConfig {
+    pub cmd: String,
+    pub folder: String,
+}
+
+impl BuildConfig {
+
+}
+
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct RunConfig {
+    pub cmd: String,
+    pub folder: String,
+}
+
+impl RunConfig {
+
+}
+

@@ -65,6 +65,7 @@ pub async fn async_main() -> Result<()> {
                 if repository.exists() {
                     println!("{} repository {} exists. skipping...",style("WARNING:").magenta(),style(repository.name()).cyan()); 
                 } else {
+                    println!("{} ...",style(repository.name()).cyan()); 
                     match &repository.branch {
                         Some(branch) => {
                             cmd!("git","clone","-b",branch, &repository.url).run()?;

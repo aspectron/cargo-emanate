@@ -1,17 +1,16 @@
 use std::env::current_dir;
 use serde_derive::Deserialize;
-use std::path::Path;
 use async_std::fs::*;
 use crate::result::Result;
+use crate::repository::Repository;
+use crate::build::Build;
+use crate::run::Run;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Manifest {
-    // pub package: Option<PackageConfig>,
-    // pub emanate: EmanateConfig,
-    // pub project : ProjectConfig,
-    pub repository: Vec<RepositoryConfig>,
-    pub build: Option<Vec<BuildConfig>>,
-    pub run: Option<RunConfig>,
+    pub repository: Vec<Repository>,
+    pub build: Option<Vec<Build>>,
+    pub run: Option<Run>,
 }
 
 impl Manifest {
@@ -70,52 +69,3 @@ pub struct EmanateConfig {
     pub resources: Option<String>,
     // port: Option<u64>,
 }
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct RepositoryConfig {
-    pub url: String,
-    pub branch: Option<String>,
-    pub settings: Option<Vec<String>>,
-    // port: Option<u64>,
-}
-
-impl RepositoryConfig {
-    pub fn name(&self) -> String {
-        Path::new(&self.url).file_name().unwrap().to_os_string().into_string().unwrap()
-    }
-
-    #[allow(dead_code)]
-    pub fn is_external(&self) -> bool {
-        if let Some(settings) = self.settings.as_ref() {
-            settings.contains(&"external".to_string())
-        } else {
-            false
-        }
-    }
-
-    pub fn exists(&self) -> bool {
-        Path::new(&self.name()).exists()
-    }
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct BuildConfig {
-    pub cmd: String,
-    pub folder: String,
-}
-
-impl BuildConfig {
-
-}
-
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct RunConfig {
-    pub cmd: String,
-    pub folder: String,
-}
-
-impl RunConfig {
-
-}
-

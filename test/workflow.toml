@@ -1,0 +1,35 @@
+[project]
+root = "~/dev/workflow-rs"
+
+repositories = [
+    { url = "git@github.com:workflow-rs/workflow-macro-tools" },
+    { url = "git@github.com:workflow-rs/workflow-http" },
+    { url = "git@github.com:workflow-rs/workflow-html" },
+    { url = "git@github.com:workflow-rs/workflow-i18n" },
+    { url = "git@github.com:workflow-rs/workflow-websocket" },
+    { url = "git@github.com:workflow-rs/workflow-rpc" },
+    { url = "git@github.com:workflow-rs/workflow-core" },
+    { url = "git@github.com:workflow-rs/workflow-log" },
+    { url = "git@github.com:workflow-rs/workflow-wasm" },
+    { url = "git@github.com:workflow-rs/workflow-dom" },
+    { url = "git@github.com:workflow-rs/workflow-terminal" },
+    { url = "git@github.com:workflow-rs/workflow-ux" },
+    # { url = "git@github.com:workflow-rs/workflow-macro" },
+    { url = "git@github.com:workflow-rs/workflow-panic-hook" },
+    { url = "git@github.com:workflow-rs/workflow-async-trait" },
+    { url = "git@github.com:solana-kaizen/kaizen", publish = false },
+    { url = "git@github.com:aspectron/workflow-simulator", publish = false },
+    { url = "git@github.com:aspectron/workflow", publish = false },
+    { url = "git@github.com:aspectron/flow-ux", external = true },
+    { url = "git@github.com:aspectron/moka", external = true },
+]
+
+build = [
+    { cmd = "bash build-web", folder = "workflow/wasm" },
+    { cmd = "cargo build", folder = "workflow-simulator" },
+    { cmd = "cargo build --release", folder = "workflow" },
+    { cmd = "cargo run --release", folder = "workflow" },
+]
+
+[publish]
+delay = "7m"

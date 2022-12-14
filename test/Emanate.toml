@@ -1,6 +1,12 @@
+[config]
+root = "~/dev/workflow-rs"
+
+[repositories]
+
 
 [[repository]]
 url = "https://github.com/oconnor663/duct.rs"
+
 
 
 [[repository]]

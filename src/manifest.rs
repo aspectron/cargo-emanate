@@ -1,71 +1,58 @@
-use std::env::current_dir;
+use std::collections::HashMap;
+
 use serde_derive::Deserialize;
-use async_std::fs::*;
-use crate::result::Result;
-use crate::repository::Repository;
-use crate::build::Build;
-use crate::run::Run;
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct Manifest {
-    pub repository: Vec<Repository>,
-    pub build: Option<Vec<Build>>,
-    pub run: Option<Run>,
-}
-
-impl Manifest {
-    // pub fn application_name(&self) -> String {
-    //     match &self.emanate.name {
-    //         Some(name) => name.clone(),
-    //         None => {
-    //             println!("WARNING: manifest is missing [emanate].name section");
-    //             self.package.name.clone()
-    //         }
-    //     }
-    // }
-
-    // pub fn application_ident(&self) -> String {
-    //     self.package.name.clone()
-    // }
+// use serde::Deserialize;
+// use std::env::current_dir;
+// use std::fs::*;
+// use crate::result::Result;
+// use crate::repository::Repository;
+// use crate::build::Build;
+// use crate::run::Run;
+use crate::prelude::*;
 
 
-    pub async fn load() -> Result<Manifest> {
-        let cwd = current_dir().unwrap();
+// #[derive(Debug, Clone, Deserialize)]
+// pub struct Manifest {
+//     pub version : String,
+//     pub name : String,
+//     pub repository : String,
+//     pub dependencies : Option<HashMap<String,Dependency>>,
+//     // pub description : String,
+//     // pub project : ProjectConfig,
+//     // pub publish : PublishConfig,
+//     // pub repository: Vec<Repository>,
+//     // pub build: Option<Vec<Build>>,
+//     // pub run: Option<Run>,
+// }
+
+// impl Manifest {
+
+//     pub fn load(cargo_toml: &Path) -> Result<Manifest> {
     
-        let emanate_toml = read_to_string(cwd.clone().join("Emanate.toml")).await?;
-        // println!("toml: {:#?}", toml);
-        let manifest: Manifest = match toml::from_str(&emanate_toml) {
-            Ok(manifest) => manifest,
-            Err(err) => {
-                panic!("Error loading Emanate.toml: {}", err);
-            }
-        };    
+//         let text = fs::read_to_string(cargo_toml)?;
+//         // println!("toml: {:#?}", toml);
+//         let manifest: Manifest = match toml::from_str(&text) {
+//             Ok(manifest) => manifest,
+//             Err(err) => {
+//                 panic!("Error loading `{}`: {}", cargo_toml.display(), err);
+//             }
+//         };    
 
-        Ok(manifest)
-    }
-}
+//         Ok(manifest)
+//     }
+// }
 
 // #[derive(Debug, Clone, Deserialize)]
-// pub struct PackageConfig {
-//     pub name: String,
-//     pub version: String,
-//     pub authors: Vec<String>,
-//     pub description: Option<String>,
-//     // port: Option<u64>,
+// pub enum Dependency {
+//     Version(String),
+//     Config(DependencyConfig)
 // }
 
 
 
 // #[derive(Debug, Clone, Deserialize)]
-// pub struct ProjectConfig {
+// pub struct DependencyConfig {
+//     pub version : String,
+//     pub features : Option<Vec<String>>,
+//     pub path : Option<String>,
 // }
-
-
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct EmanateConfig {
-    pub name: Option<String>,
-    pub version: Option<String>,
-    pub resources: Option<String>,
-    // port: Option<u64>,
-}

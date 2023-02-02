@@ -149,9 +149,37 @@ impl WorkspaceContext {
             }
         });
 
-        for crt in crates.iter() {
-            let deps = crt.dependencies.keys().map(|c|c.to_string()).collect::<Vec<_>>().join(", ");
-            println!("{} -> {deps}", crt.name());
+        let mut publish_list = vec![];
+        let mut publish_name_list = vec![];
+        let length = crates.len();
+
+        //should we use while ? maybe while can create infinite loop
+        for _ in 0..length{
+            if publish_list.len() == length{
+                break;
+            }
+            for crt in crates.iter() {
+                if publish_name_list.contains(&crt.name()){
+                    continue;
+                }
+                let mut deps = crt.dependencies.keys().map(|c|c.to_string()).collect::<Vec<String>>();
+                deps.retain(|dep| !publish_name_list.contains(&dep.as_str()));
+
+                if deps.is_empty(){
+                    //println!("{} -> <no deps>", crt.name());
+                    publish_list.push(crt);
+                    publish_name_list.push(crt.name());
+                    //continue;
+                }
+
+                //println!("{} -> {}", crt.name(), deps.join(", "));
+            }
+        }
+
+        println!("=============");
+        for crt in &publish_list {
+            let deps = crt.dependencies.keys().map(|c|c.to_string()).collect::<Vec<String>>();
+            println!("{} -> {}", crt.name(), deps.join(", "));
         }
 
 panic!();

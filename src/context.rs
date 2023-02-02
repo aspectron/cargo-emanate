@@ -33,10 +33,18 @@ impl Context {
             Context::Crate(ctx) => &ctx.dependencies,
         }
     }
+
+    pub fn file(&self) -> &PathBuf {
+        match self {
+            Context::Workspace(ctx) => &ctx.file,
+            Context::Crate(ctx) => &ctx.file,
+        }
+    }
 }
 
 #[derive(Debug)]
 pub struct CrateContext {
+    pub file: PathBuf,
     pub package: Package,
     pub dependencies: Dependencies,
 }
@@ -46,6 +54,7 @@ impl CrateContext {
         let manifest = Crate::load(location).await?;
 
         Ok(CrateContext {
+            file: manifest.file,
             package: manifest.package,
             dependencies: manifest.dependencies,
         })
@@ -54,6 +63,7 @@ impl CrateContext {
 
 #[derive(Debug)]
 pub struct WorkspaceContext {
+    pub file: PathBuf,
     pub folder: PathBuf,
     pub manifest: Manifest,
     pub crates: Vec<Crate>,
@@ -150,6 +160,7 @@ impl WorkspaceContext {
         });
 
         Ok(WorkspaceContext {
+            file: manifest.file.clone(),
             folder: folder.to_path_buf(),
             manifest,
             crates,

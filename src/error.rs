@@ -31,6 +31,12 @@ pub enum Error {
 
     #[error("versions containing \"*\" are not allowed")]
     VersionAsterisk,
+
+    #[error("this appears to be a workspace crate")]
+    WorkspaceCrate,
+
+    #[error("relative crate")]
+    RelativeCrate,
 }
 
 #[macro_export]

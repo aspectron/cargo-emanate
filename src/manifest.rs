@@ -73,7 +73,13 @@ impl Dependency {
                         .parse()
                         .map_err(|err| error!("{err}"))?)
                 } else {
-                    Err(error!("dependency is missing version property"))
+                    if table.get("workspace").is_some() {
+                        Err(Error::WorkspaceCrate)
+                    } else if table.get("path").is_some() {
+                        Err(Error::RelativeCrate)
+                    } else {
+                        Err(error!("dependency is missing version property"))
+                    }
                 }
             }
             _ => Err(error!("dependency is not a string or a table")),

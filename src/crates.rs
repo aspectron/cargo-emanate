@@ -32,6 +32,8 @@ impl CratesIo {
                 })
             })
             .collect::<Vec<_>>();
+        // remove all versions containing suffixes
+        versions.retain(|v|v.suffix.is_none());
         versions.sort_by(|a, b| b.cmp(a));
         let version = versions
             .first()

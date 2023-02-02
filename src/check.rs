@@ -21,22 +21,42 @@ impl Checker {
 
         // pre-check versions
         for name in names.iter() {
-            if let Err(err) = deps.get(*name).unwrap().version() {
-                println!("`{name}`: {err}");
-                let latest_version = client.get_latest_version(name).await?;
-                println!("latest version for `{name}` is: `{latest_version}`");
-                println!("aborting...");
-                return Ok(());
+            match deps.get(*name).unwrap().version() {
+                Err(Error::WorkspaceCrate) => {
+                    println!(
+                        "{} `{}`",
+                        style("this appears to be a workspace crate:").red(),
+                        style(self.ctx.file().display()).yellow()
+                    );
+                    return Ok(());
+                }
+                Err(Error::RelativeCrate) => {
+                    println!("`{name}`: relative crate, ignoring...");
+                }
+                Err(err) => {
+                    println!("`{name}`: {err}");
+                    let latest_version = client.get_latest_version(name).await?;
+                    println!("latest version for `{name}` is: `{latest_version}`");
+                    println!("aborting...");
+                    return Ok(());
+                }
+                _ => {}
             }
+            // if let Err(err) = deps.get(*name).unwrap().version() {
+            //     if matches!(err,Error::WorkspaceCrate) {
+            //     }
+            // }
             // .map_err(|err| error!("Error processing dependency `{name}`: {err}"))?;
         }
 
         // check against crates.io
         for name in names.iter() {
             let dependency = deps.get(*name).unwrap();
-            let version = dependency
-                .version()
-                .map_err(|err| error!("Error processing dependency `{name}`: {err}"))?;
+            let version = match dependency.version() {
+                Ok(v) => v,
+                Err(_) => continue,
+            };
+            // .map_err(|err| error!("Error processing dependency `{name}`: {err}"))?;
             let latest_version = client.get_latest_version(name).await?;
             if version != latest_version {
                 println!(

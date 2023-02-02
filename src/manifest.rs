@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use toml::*;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Crate {
     #[serde(skip)]
     pub file: PathBuf,
@@ -25,7 +25,7 @@ impl Crate {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Package {
     pub name: String,
     pub version: Value,
@@ -76,14 +76,12 @@ impl Dependency {
                         .ok_or_else(|| error!("version is not a string: {version:?}"))?
                         .parse()
                         .map_err(|err| error!("{err}"))?)
+                } else if table.get("workspace").is_some() {
+                    Err(Error::WorkspaceCrate)
+                } else if table.get("path").is_some() {
+                    Err(Error::RelativeCrate)
                 } else {
-                    if table.get("workspace").is_some() {
-                        Err(Error::WorkspaceCrate)
-                    } else if table.get("path").is_some() {
-                        Err(Error::RelativeCrate)
-                    } else {
-                        Err(error!("dependency is missing version property"))
-                    }
+                    Err(error!("dependency is missing version property"))
                 }
             }
             _ => Err(error!("dependency is not a string or a table")),

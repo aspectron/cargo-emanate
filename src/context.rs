@@ -135,107 +135,49 @@ impl WorkspaceContext {
             .iter_mut()
             .for_each(|crt| crt.dependencies.retain(|name, _| projects.contains(name)));
 
-        crates.sort_by(|a, b| {
-            use std::cmp::Ordering;
-            let name_a = a.name();
-            let name_b = b.name();
-            // let deps_a = a.dependencies.get(b);
-            if a.dependencies.get(name_b).is_some() {
-                Ordering::Greater
-            } else if b.dependencies.get(name_a).is_some() {
-                Ordering::Less
-            } else {
-                Ordering::Equal
-            }
-        });
-
         let mut publish_list = vec![];
         let mut publish_name_list = vec![];
         let length = crates.len();
 
         //should we use while ? maybe while can create infinite loop
-        for _ in 0..length{
-            if publish_list.len() == length{
+        for _ in 0..length {
+            if publish_list.len() == length {
                 break;
             }
             for crt in crates.iter() {
-                if publish_name_list.contains(&crt.name()){
+                if publish_name_list.contains(&crt.name().to_string()) {
                     continue;
                 }
-                let mut deps = crt.dependencies.keys().map(|c|c.to_string()).collect::<Vec<String>>();
-                deps.retain(|dep| !publish_name_list.contains(&dep.as_str()));
+                let mut deps = crt
+                    .dependencies
+                    .keys()
+                    .map(|c| c.to_string())
+                    .collect::<Vec<String>>();
+                deps.retain(|dep| !publish_name_list.contains(dep));
 
-                if deps.is_empty(){
-                    //println!("{} -> <no deps>", crt.name());
-                    publish_list.push(crt);
-                    publish_name_list.push(crt.name());
-                    //continue;
+                if deps.is_empty() {
+                    publish_list.push(crt.clone());
+                    publish_name_list.push(crt.name().to_string());
                 }
-
-                //println!("{} -> {}", crt.name(), deps.join(", "));
             }
         }
 
         println!("=============");
         for crt in &publish_list {
-            let deps = crt.dependencies.keys().map(|c|c.to_string()).collect::<Vec<String>>();
+            let deps = crt
+                .dependencies
+                .keys()
+                .map(|c| c.to_string())
+                .collect::<Vec<String>>();
             println!("{} -> {}", crt.name(), deps.join(", "));
         }
 
-panic!();
-
-        // let projects = crates
-        //     .iter()
-        //     .map(|crt| crt.package.name.clone())
-        //     .collect::<Vec<_>>();
-
-        // crates.iter().for_each(|crt| {
-        //     let name = &crt.package.name;
-        //     let deps = crt.dependencies.keys().collect::<Vec<_>>();
-        //     if deps.is_empty() {
-        //         let value = projects.remove(projects.iter().position(|n| n == name).unwrap());
-        //         projects.insert(0, value);
-        //     } else {
-
-        //         let project_name =
-        //             projects.remove(projects.iter().position(|n| n == name).unwrap());
-        //         println!("removing project {project_name}");
-        //         println!("{projects:#?}");
-        //         let mut pos = 0;
-        //         deps.iter().for_each(|dep_name| {
-        //             println!("{project_name} -> {dep_name}");
-        //             pos = std::cmp::max(
-        //                 pos,
-        //                 projects
-        //                     .iter()
-        //                     .position(|project| project == *dep_name)
-        //                     .unwrap()
-        //                     + 1,
-        //             );
-        //         });
-        //         println!("position: {pos}");
-        //         projects.insert(pos, project_name);
-        //         println!("{projects:#?}");
-
-        //     }
-        // });
-        // for project in projects.iter() {
-
-        // }
-
-        // for crt in crates.iter() {
-        //     let deps = crt.dependencies.keys().map(|c|c.to_string()).collect::<Vec<_>>().join(", ");
-        //     println!("{} -> {deps}", crt.name());
-        // }
-
-        // println!("{:#?}", projects);
-        panic!();
         Ok(WorkspaceContext {
             file: manifest.file.clone(),
             folder: folder.to_path_buf(),
             manifest,
-            crates,
-            projects,
+            crates: publish_list,
+            projects: publish_name_list,
             external,
         })
     }

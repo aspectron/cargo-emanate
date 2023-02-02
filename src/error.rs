@@ -20,7 +20,7 @@ pub enum Error {
     #[error("ParseIntError: {0}")]
     ParseIntError(#[from] std::num::ParseIntError),
 
-    #[error("non-fixed version {0}")]
+    #[error("detected partial version `{0}`")]
     NonFixedVersion(String),
 
     #[error("invalid version {0}")]

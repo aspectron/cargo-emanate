@@ -26,7 +26,7 @@ enum Cmd {
     #[clap(name = "emanate")]
     #[clap(about, author, version)]
     #[clap(
-        setting = clap::AppSettings::DeriveDisplayOrder,
+        // setting = clap::AppSettings::DeriveDisplayOrder,
     )]
     Args(Args),
 }
@@ -58,8 +58,8 @@ enum Action {
 pub async fn async_main() -> Result<()> {
     let args = Cmd::parse();
     let Cmd::Args(Args { action, location }) = args;
-    let location = Manifest::locate(location).await?;
-    let ctx = Arc::new(Context::load(&location).await?);
+    let location = manifest::locate(location).await?;
+    let ctx = Context::load(&location).await?;
 
     match action {
         // Action::Test {} => {
@@ -70,17 +70,17 @@ pub async fn async_main() -> Result<()> {
         //     println!("{}", v);
         // }
         Action::Version { change } => {
-            let versioner = Versioner::new(&ctx);
+            let versioner = Versioner::new(ctx);
             versioner.change(change)?;
         }
 
         Action::Publish => {
-            let publisher = Publisher::new(&ctx);
+            let publisher = Publisher::new(ctx);
             publisher.publish().await?;
         }
 
         Action::Check => {
-            let checker = Checker::new(&ctx);
+            let checker = Checker::new(ctx);
             checker.check().await?;
         }
     }

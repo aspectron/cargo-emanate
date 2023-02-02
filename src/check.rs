@@ -3,22 +3,37 @@ use crate::prelude::*;
 /// Checks for the latest version of the crate
 #[derive(Debug)]
 pub struct Checker {
-    ctx: Arc<Context>,
+    ctx: Context,
 }
 
 impl Checker {
-    pub fn new(ctx: &Arc<Context>) -> Checker {
-        Checker { ctx: ctx.clone() }
+    pub fn new(ctx: Context) -> Checker {
+        Checker { ctx }
     }
 
     pub async fn check(&self) -> Result<()> {
-        let client = CratesIo::new_with_latency(500);
-        let mut names = self.ctx.external.keys().collect::<Vec<_>>();
+        let deps = self.ctx.dependencies();
+
+        let client = CratesIo::new_with_latency(300);
+        let mut names = deps.keys().collect::<Vec<_>>();
         names.sort();
         let len = names.iter().map(|c| c.len()).fold(0, |a, b| a.max(b)) + 2;
 
-        for name in names {
-            let dependency = self.ctx.external.get(name).unwrap();
+        // pre-check versions
+        for name in names.iter() {
+            if let Err(err) = deps.get(*name).unwrap().version() {
+                println!("`{name}`: {err}");
+                let latest_version = client.get_latest_version(name).await?;
+                println!("latest version for `{name}` is: `{latest_version}`");
+                println!("aborting...");
+                return Ok(());
+            }
+            // .map_err(|err| error!("Error processing dependency `{name}`: {err}"))?;
+        }
+
+        // check against crates.io
+        for name in names.iter() {
+            let dependency = deps.get(*name).unwrap();
             let version = dependency
                 .version()
                 .map_err(|err| error!("Error processing dependency `{name}`: {err}"))?;

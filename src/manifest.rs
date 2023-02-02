@@ -63,7 +63,7 @@ pub struct Dependency(Value);
 impl Dependency {
     pub fn version(&self) -> Result<Version> {
         match &self.0 {
-            Value::String(s) => Ok(s.parse().map_err(|err| error!("{err}: `{s}`"))?),
+            Value::String(s) => Ok(s.parse().map_err(|err| error!("{err}"))?),
             Value::Table(table) => {
                 let version = table.get("version");
                 if let Some(version) = version {
@@ -71,7 +71,7 @@ impl Dependency {
                         .as_str()
                         .ok_or_else(|| error!("version is not a string: {version:?}"))?
                         .parse()
-                        .map_err(|err| error!("{err}: `{version}`"))?)
+                        .map_err(|err| error!("{err}"))?)
                 } else {
                     Err(error!("dependency is missing version property"))
                 }
@@ -82,39 +82,6 @@ impl Dependency {
 }
 
 impl Manifest {
-    pub async fn locate(location: Option<String>) -> Result<PathBuf> {
-        let cwd = current_dir();
-
-        let location = if let Some(location) = location {
-            if let Some(stripped) = location.strip_prefix("~/") {
-                home::home_dir()
-                    .expect("unable to get home directory")
-                    .join(stripped)
-            } else {
-                let location = Path::new(&location).to_path_buf();
-                if location.is_absolute() {
-                    location
-                } else {
-                    cwd.join(&location)
-                }
-            }
-        } else {
-            cwd
-        };
-
-        let locations = [&location, &location.join("Cargo.toml")];
-
-        for location in locations.iter() {
-            if let Ok(location) = location.canonicalize() {
-                if location.is_file() {
-                    return Ok(location);
-                }
-            }
-        }
-
-        Err(error!("Unable to locate 'Cargo.toml' manifest"))
-    }
-
     pub async fn load(file: &PathBuf) -> Result<Manifest> {
         let toml = fs::read_to_string(file)?;
         let mut manifest: Manifest = toml::from_str(&toml)?;
@@ -122,4 +89,37 @@ impl Manifest {
         manifest.toml = toml;
         Ok(manifest)
     }
+}
+
+pub async fn locate(location: Option<String>) -> Result<PathBuf> {
+    let cwd = current_dir();
+
+    let location = if let Some(location) = location {
+        if let Some(stripped) = location.strip_prefix("~/") {
+            home::home_dir()
+                .expect("unable to get home directory")
+                .join(stripped)
+        } else {
+            let location = Path::new(&location).to_path_buf();
+            if location.is_absolute() {
+                location
+            } else {
+                cwd.join(&location)
+            }
+        }
+    } else {
+        cwd
+    };
+
+    let locations = [&location, &location.join("Cargo.toml")];
+
+    for location in locations.iter() {
+        if let Ok(location) = location.canonicalize() {
+            if location.is_file() {
+                return Ok(location);
+            }
+        }
+    }
+
+    Err(error!("Unable to locate 'Cargo.toml' manifest"))
 }

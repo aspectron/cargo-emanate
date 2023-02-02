@@ -1,12 +1,59 @@
 use crate::prelude::*;
 use futures_util::future::*;
+use toml::*;
 
 // pub struct Ref {
 //     name :
 // }
 
+#[derive(Debug, Clone)]
+pub enum Context {
+    Workspace(Arc<WorkspaceContext>),
+    Crate(Arc<CrateContext>),
+}
+
+impl Context {
+    pub async fn load(location: &PathBuf) -> Result<Context> {
+        let toml = async_std::fs::read_to_string(&location).await?;
+        let tree: Value = toml::from_str(&toml)?;
+        if tree.get("workspace").is_some() {
+            Ok(Context::Workspace(Arc::new(
+                WorkspaceContext::load(location).await?,
+            )))
+        } else {
+            Ok(Context::Crate(Arc::new(
+                CrateContext::load(location).await?,
+            )))
+        }
+    }
+
+    pub fn dependencies(&self) -> &Dependencies {
+        match self {
+            Context::Workspace(ctx) => &ctx.external,
+            Context::Crate(ctx) => &ctx.dependencies,
+        }
+    }
+}
+
 #[derive(Debug)]
-pub struct Context {
+pub struct CrateContext {
+    pub package: Package,
+    pub dependencies: Dependencies,
+}
+
+impl CrateContext {
+    pub async fn load(location: &PathBuf) -> Result<CrateContext> {
+        let manifest = Crate::load(location).await?;
+
+        Ok(CrateContext {
+            package: manifest.package,
+            dependencies: manifest.dependencies,
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct WorkspaceContext {
     pub folder: PathBuf,
     pub manifest: Manifest,
     pub crates: Vec<Crate>,
@@ -14,8 +61,8 @@ pub struct Context {
     pub external: Dependencies,
 }
 
-impl Context {
-    pub async fn load(location: &PathBuf) -> Result<Context> {
+impl WorkspaceContext {
+    pub async fn load(location: &PathBuf) -> Result<WorkspaceContext> {
         let mut manifest = Manifest::load(location).await?;
 
         let folder = location.parent().unwrap_or_else(|| {
@@ -102,7 +149,7 @@ impl Context {
             }
         });
 
-        Ok(Context {
+        Ok(WorkspaceContext {
             folder: folder.to_path_buf(),
             manifest,
             crates,

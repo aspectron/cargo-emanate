@@ -105,7 +105,7 @@ impl FromStr for Version {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Change {
     Major,
     Minor,
@@ -126,33 +126,37 @@ impl FromStr for Change {
 }
 
 pub struct Versioner {
-    ctx: Arc<Context>,
+    ctx: Context,
 }
 
 impl Versioner {
-    pub fn new(ctx: &Arc<Context>) -> Versioner {
-        Versioner { ctx: ctx.clone() }
+    pub fn new(ctx: Context) -> Versioner {
+        Versioner { ctx }
     }
 
     pub fn change(&self, change: Change) -> Result<()> {
-        let mut version = self.ctx.manifest.version()?;
-        version.change(&change);
-        let mut doc = self
-            .ctx
-            .manifest
-            .toml
-            .parse::<Document>()
-            .unwrap_or_else(|err| panic!("toml edit - unable to parse workspace manifest: {err}"));
+        match &self.ctx {
+            Context::Workspace(ctx) => {
+                let mut version = ctx.manifest.version()?;
+                version.change(&change);
+                let mut doc = ctx.manifest.toml.parse::<Document>().unwrap_or_else(|err| {
+                    panic!("toml edit - unable to parse workspace manifest: {err}")
+                });
 
-        let v = version.to_string();
-        doc["workspace"]["package"]["version"] = value(&v);
+                let v = version.to_string();
+                doc["workspace"]["package"]["version"] = value(&v);
 
-        for dep in self.ctx.manifest.workspace.dependencies.keys() {
-            doc["workspace"]["dependencies"][dep]["version"] = value(&v);
+                for dep in ctx.manifest.workspace.dependencies.keys() {
+                    doc["workspace"]["dependencies"][dep]["version"] = value(&v);
+                }
+
+                let doc_str = doc.to_string();
+                fs::write(&ctx.manifest.file, doc_str)?;
+            }
+            _ => {
+                panic!("not currently supported in a single crate context");
+            }
         }
-
-        let doc_str = doc.to_string();
-        fs::write(&self.ctx.manifest.file, doc_str)?;
 
         Ok(())
     }

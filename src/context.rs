@@ -11,7 +11,7 @@ pub struct Context {
     pub manifest: Manifest,
     pub crates: Vec<Crate>,
     pub projects: Vec<String>,
-    pub external: Vec<String>,
+    pub external: Dependencies,
 }
 
 impl Context {
@@ -46,6 +46,8 @@ impl Context {
             })
             .collect::<Vec<_>>();
 
+        println!();
+        let before = crates.len();
         crates.retain(|c| {
             let retain = c.package.publish.unwrap_or(true);
             if !retain {
@@ -53,18 +55,21 @@ impl Context {
             }
             retain
         });
+        if before != crates.len() {
+            println!();
+        }
 
         let mut projects = crates
             .iter()
             .map(|crt| crt.package.name.clone())
             .collect::<Vec<_>>();
 
-        let mut external = Vec::new();
-        manifest.workspace.dependencies.retain(|name, _| {
+        let mut external = Dependencies::default();
+        manifest.workspace.dependencies.retain(|name, dependency| {
             if projects.contains(name) {
                 true
             } else {
-                external.push(name.clone());
+                external.insert(name.clone(), dependency.clone());
                 false
             }
         });

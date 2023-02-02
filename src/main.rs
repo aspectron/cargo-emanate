@@ -2,7 +2,9 @@ use crate::prelude::*;
 use crate::result::Result;
 use clap::{Parser, Subcommand};
 
+mod check;
 mod context;
+mod crates;
 mod error;
 mod log;
 mod manifest;
@@ -31,9 +33,11 @@ enum Cmd {
 
 #[derive(Debug, clap::Args)]
 struct Args {
+    /// Workspace manifest location (Cargo.toml)
     #[clap(name = "manifest")]
     location: Option<String>,
 
+    /// Action to execute
     #[clap(subcommand)]
     action: Action,
     // #[clap(short, long)]
@@ -42,33 +46,32 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Action {
-    Test {
-        // arg : String,
-    },
+    // Test {},
+
+    /// Update workspace version: 'major', 'minor', 'patch', 'x.y.z[-suffix]'
     Version {
-        /// Update workspace version: 'major', 'minor', 'patch', 'x.y.z'
         change: Change,
     },
+    /// Publish all crates in the workspace
     Publish,
-    // Purge {
-    //     #[clap(short, long)]
-    //     force : bool
-    // },
+    /// Check all dependency versions against those published on crates.io
+    Check,
 }
 
 pub async fn async_main() -> Result<()> {
-    // let cwd = std::env::current_dir()?;
     let args = Cmd::parse();
     let Cmd::Args(Args { action, location }) = args;
-
     let location = Manifest::locate(location).await?;
     let ctx = Arc::new(Context::load(&location).await?);
 
     match action {
-        Action::Test {} => {
-            // println!("{ctx:#?}");
-            // println!("arg: {}", arg);
-        }
+        // Action::Test {} => {
+        //     println!("{ctx:#?}");
+        //     println!("arg: {}", arg);
+        //     let client = CratesIo::new_with_latency(500);
+        //     let v = client.get_latest_version("base64").await?;
+        //     println!("{}", v);
+        // }
         Action::Version { change } => {
             let versioner = Versioner::new(&ctx);
             versioner.change(change)?;
@@ -77,6 +80,11 @@ pub async fn async_main() -> Result<()> {
         Action::Publish => {
             let publisher = Publisher::new(&ctx);
             publisher.publish().await?;
+        }
+
+        Action::Check => {
+            let checker = Checker::new(&ctx);
+            checker.check().await?;
         }
     }
 

@@ -57,8 +57,29 @@ pub struct WorkspacePackage {
     pub version: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Dependency(Value);
+
+impl Dependency {
+    pub fn version(&self) -> Result<Version> {
+        match &self.0 {
+            Value::String(s) => Ok(s.parse().map_err(|err| error!("{err}: `{s}`"))?),
+            Value::Table(table) => {
+                let version = table.get("version");
+                if let Some(version) = version {
+                    Ok(version
+                        .as_str()
+                        .ok_or_else(|| error!("version is not a string: {version:?}"))?
+                        .parse()
+                        .map_err(|err| error!("{err}: `{version}`"))?)
+                } else {
+                    Err(error!("dependency is missing version property"))
+                }
+            }
+            _ => Err(error!("dependency is not a string or a table")),
+        }
+    }
+}
 
 impl Manifest {
     pub async fn locate(location: Option<String>) -> Result<PathBuf> {

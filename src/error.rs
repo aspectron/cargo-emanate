@@ -2,7 +2,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("Error: {0}")]
+    #[error("{0}")]
     String(String),
 
     #[error(transparent)]
@@ -20,11 +20,17 @@ pub enum Error {
     #[error("ParseIntError: {0}")]
     ParseIntError(#[from] std::num::ParseIntError),
 
+    #[error("non-fixed version {0}")]
+    NonFixedVersion(String),
+
     #[error("invalid version {0}")]
     InvalidVersion(String),
 
     #[error(transparent)]
     CratesIoApi(#[from] crates_io_api::Error),
+
+    #[error("versions containing \"*\" are not allowed")]
+    VersionAsterisk,
 }
 
 #[macro_export]

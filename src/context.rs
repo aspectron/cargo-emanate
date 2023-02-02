@@ -149,10 +149,17 @@ impl WorkspaceContext {
             }
         });
 
-        let projects = crates
-            .iter()
-            .map(|crt| crt.package.name.clone())
-            .collect::<Vec<_>>();
+        for crt in crates.iter() {
+            let deps = crt.dependencies.keys().map(|c|c.to_string()).collect::<Vec<_>>().join(", ");
+            println!("{} -> {deps}", crt.name());
+        }
+
+panic!();
+
+        // let projects = crates
+        //     .iter()
+        //     .map(|crt| crt.package.name.clone())
+        //     .collect::<Vec<_>>();
 
         // crates.iter().for_each(|crt| {
         //     let name = &crt.package.name;
@@ -188,10 +195,10 @@ impl WorkspaceContext {
 
         // }
 
-        for crt in crates.iter() {
-            let deps = crt.dependencies.keys().map(|c|c.to_string()).collect::<Vec<_>>().join(", ");
-            println!("{} -> {deps}", crt.name());
-        }
+        // for crt in crates.iter() {
+        //     let deps = crt.dependencies.keys().map(|c|c.to_string()).collect::<Vec<_>>().join(", ");
+        //     println!("{} -> {deps}", crt.name());
+        // }
 
         // println!("{:#?}", projects);
         panic!();

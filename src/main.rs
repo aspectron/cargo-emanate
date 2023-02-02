@@ -47,11 +47,8 @@ struct Args {
 #[derive(Subcommand, Debug)]
 enum Action {
     // Test {},
-
     /// Update workspace version: 'major', 'minor', 'patch', 'x.y.z[-suffix]'
-    Version {
-        change: Change,
-    },
+    Version { change: Change },
     /// Publish all crates in the workspace
     Publish,
     /// Check all dependency versions against those published on crates.io

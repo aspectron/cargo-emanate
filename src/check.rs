@@ -14,7 +14,7 @@ impl Checker {
     pub async fn check(&self) -> Result<()> {
         let deps = self.ctx.dependencies();
 
-        let client = CratesIo::new_with_latency(300);
+        let client = CratesIo::new();
         let mut names = deps.keys().collect::<Vec<_>>();
         names.sort();
         let len = names.iter().map(|c| c.len()).fold(0, |a, b| a.max(b)) + 2;

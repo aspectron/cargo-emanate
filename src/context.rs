@@ -1,68 +1,108 @@
 use crate::prelude::*;
-use std::env;
-use std::path::*;
+use futures_util::future::*;
+
+// pub struct Ref {
+//     name :
+// }
 
 #[derive(Debug)]
 pub struct Context {
-    pub manifest : Config,
-    pub root_folder : PathBuf,
-    pub toml_file_location : PathBuf,
-
-
+    pub folder: PathBuf,
+    pub manifest: Manifest,
+    pub crates: Vec<Crate>,
+    pub projects: Vec<String>,
+    pub external: Vec<String>,
 }
 
 impl Context {
-    pub fn try_new(location: Option<String>) -> Result<Self> {
+    pub async fn load(location: &PathBuf) -> Result<Context> {
+        let mut manifest = Manifest::load(location).await?;
 
-        let location = location.map(|l|Path::new(&l).to_path_buf()).unwrap_or(env::current_dir()?);
+        let folder = location.parent().unwrap_or_else(|| {
+            panic!(
+                "unable to determin parent folder for location: {}",
+                location.display()
+            )
+        });
 
-        let extension = location.extension();
-        let (toml_file_location,toml_file) = match extension {
-            Some(extension) if extension == "toml" => {
-                (location.parent().unwrap().to_path_buf(), location)
-            },
-            _ => {
-                (location.clone(), location.join("emanate.toml"))
+        let crates = manifest
+            .workspace
+            .members
+            .iter()
+            .map(|m| folder.join(m).join("Cargo.toml"))
+            .collect::<Vec<_>>();
+
+        let futures = crates.iter().map(Crate::load).collect::<Vec<_>>();
+
+        let results = join_all(futures).await;
+
+        let mut crates = results
+            .into_iter()
+            .enumerate()
+            .map(|(idx, r)| {
+                r.unwrap_or_else(|err| {
+                    panic!("Error processing `{}`: {err}", crates[idx].display())
+                })
+            })
+            .collect::<Vec<_>>();
+
+        crates.retain(|c| {
+            let retain = c.package.publish.unwrap_or(true);
+            if !retain {
+                println!("...skipping {}", c.package.name)
             }
-        };
+            retain
+        });
 
-        let manifest = Config::load(&toml_file)?;
+        let mut projects = crates
+            .iter()
+            .map(|crt| crt.package.name.clone())
+            .collect::<Vec<_>>();
 
-        let root_folder = if let Some(root) = &manifest.project.root {
-            let root = if root.starts_with("~/") {
-                let home_dir = home::home_dir().unwrap();
-                home_dir.join(root.split_at(2).1)
+        let mut external = Vec::new();
+        manifest.workspace.dependencies.retain(|name, _| {
+            if projects.contains(name) {
+                true
             } else {
-                PathBuf::from(root)
-            };
-            // if root.starts_with("~/") || 
-            if root.starts_with("/") {
-                Path::new(&root).to_path_buf()
-            } else {
-                toml_file_location.join(root)
+                external.push(name.clone());
+                false
             }
-        } else {
-            toml_file_location.clone()
-        };
+        });
 
-        if !root_folder.is_dir() {
-            return Err(error!("Unable to locate root folder `{}`", root_folder.display()));
-        }
+        crates
+            .iter_mut()
+            .for_each(|crt| crt.dependencies.retain(|name, _| projects.contains(name)));
 
-        // Context::load_projects(&manifest)?;
+        crates.iter().for_each(|crt| {
+            let name = &crt.package.name;
+            let deps = crt.dependencies.keys().collect::<Vec<_>>();
+            if deps.is_empty() {
+                let value = projects.remove(projects.iter().position(|n| n == name).unwrap());
+                projects.insert(0, value);
+            } else {
+                let project_name =
+                    projects.remove(projects.iter().position(|n| n == name).unwrap());
+                let mut pos = 0;
+                deps.iter().for_each(|dep_name| {
+                    pos = std::cmp::max(
+                        pos,
+                        projects
+                            .iter()
+                            .position(|project| project == *dep_name)
+                            .unwrap()
+                            + 1,
+                    );
+                });
+                projects.insert(pos, project_name);
+            }
+        });
 
-
-
-        let ctx = Context {
+        Ok(Context {
+            folder: folder.to_path_buf(),
             manifest,
-            root_folder,
-            toml_file_location,
-        };
-
-        Ok(ctx)
+            crates,
+            projects,
+            external,
+        })
     }
-
-    // fn load_cargo_manifests(manifest: &Manifest) -> Result<> {
-
-    // }
 }

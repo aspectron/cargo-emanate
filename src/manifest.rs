@@ -19,6 +19,10 @@ impl Crate {
         crt.toml = toml;
         Ok(crt)
     }
+
+    pub fn name(&self) -> &str {
+        &self.package.name
+    }
 }
 
 #[derive(Debug, Deserialize)]

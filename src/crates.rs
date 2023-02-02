@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 pub struct CratesIo {
     client: crates_io_api::AsyncClient,
-    rate_limit : std::time::Duration,
+    rate_limit: std::time::Duration,
 }
 
 impl CratesIo {
@@ -16,7 +16,10 @@ impl CratesIo {
         )
         .unwrap_or_else(|err| panic!("Unable to instantiate crates_io_api::AsyncClient: `{err}`"));
 
-        CratesIo { client, rate_limit : std::time::Duration::from_millis(rate_limit) }
+        CratesIo {
+            client,
+            rate_limit: std::time::Duration::from_millis(rate_limit),
+        }
     }
 
     pub async fn get_latest_version(&self, name: &str) -> Result<Version> {
@@ -34,7 +37,7 @@ impl CratesIo {
             })
             .collect::<Vec<_>>();
         // remove all versions containing suffixes
-        versions.retain(|v|v.suffix.is_none());
+        versions.retain(|v| v.suffix.is_none());
         versions.sort_by(|a, b| b.cmp(a));
         let version = versions
             .first()

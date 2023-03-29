@@ -12,7 +12,6 @@ impl Builder {
     pub async fn build(&self) -> Result<()> {
         match &self.ctx {
             Context::Workspace(ctx) => {
-                // let crates_io = CratesIo::new();
                 let manifest_version = ctx.manifest.version()?;
 
                 for crt in ctx.crates.iter() {
@@ -25,14 +24,13 @@ impl Builder {
                         if let Some(wasm) = metadata.wasm.as_ref() {
                             for wasm_target in wasm.targets.iter() {
                                 let target = wasm_target.target.to_string();
-                                // let out_dir = serde_json::to_string(&wasm_target.out_dir)?;
-                                // let result = cmd!("wasm-pack", "build", "--target", &target, "--out-dir", &wasm_target.out_dir)
-                                //     .dir(&crt.folder)
-                                //     .run();
-                                let result = Result::Ok(());
+                                let result = cmd!("wasm-pack", "build", "--target", &target, "--out-dir", &wasm_target.out_dir)
+                                    .dir(&crt.folder)
+                                    .run();
+                                // let result = Result::Ok(());
                                 match result {
                                     Ok(_) => {
-                                        // zip -r mynewfilename.zip foldertozip/   or   tar -pvczf BackUpDirectory.tar.gz /path/to/directory
+                                        // zip -r filename.zip source-folder/   or   tar -pvczf filename.tar.gz /path/to/directory
                                         let out_dir = PathBuf::from(&wasm_target.out_dir);
                                         let source_folder = crt.folder.join(&out_dir);
                                         let source_parent = source_folder.parent().unwrap_or_else(||panic!("unable to get parent directory from `out-dir`: '{}'",wasm_target.out_dir));
@@ -66,9 +64,7 @@ impl Builder {
                                             .dir(&source_parent)
                                             .run()?;
 
-                                        // println!("running in dest folder: {}", destination_folder.display());
                                         cmd!("du", "-h", &destination)
-                                            // .dir(&destination_folder)
                                             .run()?;
 
                                         log_info!(

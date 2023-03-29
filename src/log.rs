@@ -33,6 +33,11 @@ pub mod impls {
     }
 
     #[allow(dead_code)]
+    pub fn log_error_impl(source: &str, args: &fmt::Arguments<'_>) {
+        println!("{:>12} {}", style(source).red().bold(), args);
+    }
+
+    #[allow(dead_code)]
     pub fn log_warn_impl(source: &str, args: &fmt::Arguments<'_>) {
         println!("{:>12} {}", style(source).yellow().bold(), args);
     }
@@ -66,6 +71,13 @@ macro_rules! log_info {
 }
 
 #[macro_export]
+macro_rules! log_error {
+    ($target:expr, $($t:tt)*) => (
+        impls::log_error_impl($target, &format_args!($($t)*))
+    )
+}
+
+#[macro_export]
 macro_rules! log_warn {
     ($target:expr, $($t:tt)*) => (
         impls::log_warn_impl($target, &format_args!($($t)*))
@@ -83,6 +95,7 @@ pub use log_info;
 pub use log_state;
 pub use log_trace;
 pub use log_warn;
+pub use log_error;
 
 #[allow(dead_code)]
 pub fn log_state_clear() {

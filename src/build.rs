@@ -1,3 +1,4 @@
+use convert_case::{Case, Casing};
 use crate::prelude::*;
 
 pub struct Builder {
@@ -49,22 +50,33 @@ impl Builder {
                                             format!("{crate_name}-{version}-{target}.zip");
                                         let destination_folder = crt.folder.join(&wasm.folder);
                                         std::fs::create_dir_all(&destination_folder)?;
-                                        let destination = destination_folder.join(filename);
+                                        let archive_dest = destination_folder.join(filename);
 
-                                        if destination.exists() {
+                                        if archive_dest.exists() {
                                             log_info!(
                                                 "Build",
                                                 "removing: `{}`",
-                                                destination.display()
+                                                archive_dest.display()
                                             );
-                                            std::fs::remove_file(&destination)?;
+                                            std::fs::remove_file(&archive_dest)?;
                                         }
 
-                                        cmd!("zip", "-r", "-9", &destination, archive_folder)
+                                        cmd!("zip", "-r", "-9", &archive_dest, archive_folder)
                                             .dir(&source_parent)
                                             .run()?;
+                                        
+                                        let snake_crate_name = crate_name.to_case(Case::Snake);
+                                        let main_file = source_folder.join(format!("{snake_crate_name}.js"));
+                                        let doc_dest = destination_folder.join(format!("{crate_name}-docs-{version}-{target}"));
+                                        
+                                        cmd!("jsdoc", "--destination", doc_dest, main_file)
+                                            .dir(&source_parent)
+                                            .run()
+                                            .map_err(|err| {
+                                                log_error!("JsDoc","error running jsdoc: {err}");
+                                            }).ok();
 
-                                        cmd!("du", "-h", &destination)
+                                        cmd!("du", "-h", &archive_dest)
                                             .run()?;
 
                                         log_info!(

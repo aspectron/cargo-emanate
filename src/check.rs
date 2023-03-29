@@ -21,7 +21,11 @@ impl Checker {
 
         // pre-check versions
         for name in names.iter() {
-            match deps.get(*name).unwrap().version() {
+            let dep = deps.get(*name).unwrap();
+            if dep.git().is_some() {
+                continue;
+            }
+            match dep.version() {
                 Err(Error::WorkspaceCrate) => {
                     println!(
                         "{} `{}`",

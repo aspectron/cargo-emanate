@@ -162,15 +162,15 @@ impl WorkspaceContext {
             }
         }
 
-        println!("=============");
-        for crt in &publish_list {
-            let deps = crt
-                .dependencies
-                .keys()
-                .map(|c| c.to_string())
-                .collect::<Vec<String>>();
-            println!("{} -> {}", crt.name(), deps.join(", "));
-        }
+        // println!("=============");
+        // for crt in &publish_list {
+        //     let deps = crt
+        //         .dependencies
+        //         .keys()
+        //         .map(|c| c.to_string())
+        //         .collect::<Vec<String>>();
+        //     println!("{} -> {}", crt.name(), deps.join(", "));
+        // }
 
         Ok(WorkspaceContext {
             file: manifest.file.clone(),

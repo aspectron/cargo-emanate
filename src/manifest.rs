@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use serde::{Deserialize, Serialize};
 use toml::*;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -6,8 +7,13 @@ pub struct Crate {
     #[serde(skip)]
     pub file: PathBuf,
     #[serde(skip)]
+    pub folder: PathBuf,
+    #[serde(skip)]
     pub toml: String,
+    #[serde(skip)]
+    pub toml_root: Option<Value>,
     pub package: Package,
+    // #[serde(skip)]
     pub dependencies: Dependencies,
 }
 
@@ -15,7 +21,38 @@ impl Crate {
     pub async fn load(file: &PathBuf) -> Result<Crate> {
         let toml = async_std::fs::read_to_string(&file).await?;
         let mut crt: Crate = toml::from_str(&toml)?;
+        let table: Value = toml::from_str(&toml)?;
+
+        let targets = table.get("target");
+        if let Some(targets) = targets {
+            if let Some(targets) = targets.as_table() {
+                for (_k, v) in targets.iter() {
+                    if let Some(cfgs) = v.as_table() {
+                        for (k2, v2) in cfgs.iter() {
+                            if k2 == "dependencies" {
+                                if let Some(deps) = v2.as_table() {
+                                    for (k3, v3) in deps.iter() {
+                                        crt.dependencies.insert(k3.clone(), Dependency(v3.clone()));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // println!("{:#?}",table);
+        // panic!();
+        let folder = file.parent().unwrap_or_else(|| {
+            panic!(
+                "unable to determin parent folder for location: {}",
+                file.display()
+            )
+        });
+
+        crt.toml_root = Some(table);
         crt.file = file.to_owned();
+        crt.folder = folder.to_owned();
         crt.toml = toml;
         Ok(crt)
     }
@@ -23,6 +60,27 @@ impl Crate {
     pub fn name(&self) -> &str {
         &self.package.name
     }
+
+    pub fn toml_root(&self) -> &Value {
+        self.toml_root.as_ref().unwrap()
+    }
+
+    pub fn metadata(&self) -> Result<Option<Metadata>> {
+        if let Some(Some(package)) = self.toml_root().get("package").map(Value::as_table) {
+            if let Some(Some(metadata)) = package.get("metadata").map(Value::as_table) {
+                if let Some(emanate) = metadata.get("emanate") {
+                    let metadata = Metadata::deserialize(emanate.clone())?;
+                    return Ok(Some(metadata));
+                }
+            }
+        }
+        Ok(None)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Metadata {
+    pub wasm: Option<WasmMetadata>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -30,6 +88,7 @@ pub struct Package {
     pub name: String,
     pub version: Value,
     pub publish: Option<bool>,
+    pub metadata: Option<Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -65,6 +124,15 @@ pub struct WorkspacePackage {
 pub struct Dependency(Value);
 
 impl Dependency {
+    pub fn git(&self) -> Option<()> {
+        match &self.0 {
+            Value::Table(table) => {
+                let git = table.get("git");
+                git.map(|_| ())
+            }
+            _ => None,
+        }
+    }
     pub fn version(&self) -> Result<Version> {
         match &self.0 {
             Value::String(s) => Ok(s.parse().map_err(|err| error!("{err}"))?),
@@ -130,4 +198,34 @@ pub async fn locate(location: Option<String>) -> Result<PathBuf> {
     }
 
     Err(error!("Unable to locate 'Cargo.toml' manifest"))
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum WasmTargetPlatform {
+    Web,
+    NodeJs,
+}
+
+impl ToString for WasmTargetPlatform {
+    fn to_string(&self) -> String {
+        match self {
+            WasmTargetPlatform::Web => "web",
+            WasmTargetPlatform::NodeJs => "nodejs",
+        }
+        .to_string()
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WasmTarget {
+    pub target: WasmTargetPlatform,
+    #[serde(rename = "out-dir")]
+    pub out_dir: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WasmMetadata {
+    pub targets: Vec<WasmTarget>,
+    pub folder: String,
 }

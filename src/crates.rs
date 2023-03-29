@@ -7,7 +7,7 @@ pub struct CratesIo {
 
 impl CratesIo {
     pub fn new() -> Self {
-        Self::new_with_rate_limit(200)
+        Self::new_with_rate_limit(0)
     }
     pub fn new_with_rate_limit(rate_limit: u64) -> Self {
         let client = crates_io_api::AsyncClient::new(

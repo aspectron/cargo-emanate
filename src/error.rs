@@ -37,6 +37,9 @@ pub enum Error {
 
     #[error("relative crate")]
     RelativeCrate,
+
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
 }
 
 #[macro_export]

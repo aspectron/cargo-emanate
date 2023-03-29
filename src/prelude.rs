@@ -2,7 +2,9 @@ pub use crate::error::error;
 pub use crate::error::Error;
 pub use crate::result::Result;
 pub use crate::utils::*;
-pub use crate::{check::*, context::*, crates::*, log::*, manifest::*, publish::*, version::*};
+pub use crate::{
+    build::*, check::*, context::*, crates::*, log::*, manifest::*, publish::*, version::*,
+};
 pub use console::style;
 pub use duct::cmd;
 pub use pad::*;

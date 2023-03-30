@@ -227,5 +227,6 @@ pub struct WasmTarget {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WasmMetadata {
     pub targets: Vec<WasmTarget>,
-    pub folder: String,
+    pub folder: Option<String>,
+    pub docs: Option<String>,
 }

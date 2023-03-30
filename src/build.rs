@@ -48,9 +48,10 @@ impl Builder {
                                             .to_string();
                                         let filename =
                                             format!("{crate_name}-{version}-{target}.zip");
-                                        let destination_folder = crt.folder.join(&wasm.folder);
-                                        std::fs::create_dir_all(&destination_folder)?;
-                                        let archive_dest = destination_folder.join(filename);
+                                        let setup_folder = wasm.folder.clone().unwrap_or("setup".to_string());
+                                        let setup_folder = crt.folder.join(&setup_folder);
+                                        std::fs::create_dir_all(&setup_folder)?;
+                                        let archive_dest = setup_folder.join(filename);
 
                                         if archive_dest.exists() {
                                             log_info!(
@@ -67,9 +68,10 @@ impl Builder {
                                         
                                         let snake_crate_name = crate_name.to_case(Case::Snake);
                                         let main_file = source_folder.join(format!("{snake_crate_name}.js"));
-                                        let doc_dest = destination_folder.join(format!("{crate_name}-docs-{version}-{target}"));
+                                        let docs_folder = wasm.docs.clone().unwrap_or("docs".to_string());
+                                        let doc_dest = crt.folder.join(docs_folder).join(format!("{crate_name}-{version}-{target}"));
                                         
-                                        cmd!("jsdoc", "--destination", doc_dest, main_file)
+                                        cmd!("jsdoc", "--destination", doc_dest, main_file, "../README.md")
                                             .dir(&source_parent)
                                             .run()
                                             .map_err(|err| {

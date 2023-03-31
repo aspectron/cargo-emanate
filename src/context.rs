@@ -63,11 +63,17 @@ impl CrateContext {
 
 #[derive(Debug)]
 pub struct WorkspaceContext {
+    /// path to the workspace `Cargo.toml` file.
     pub file: PathBuf,
+    /// root workspace folder
     pub folder: PathBuf,
+    /// deserialized manifest
     pub manifest: Manifest,
+    /// List of internal workspace crates
     pub crates: Vec<Crate>,
+    /// list of projects
     pub projects: Vec<String>,
+    /// external dependencies
     pub external: Dependencies,
 }
 

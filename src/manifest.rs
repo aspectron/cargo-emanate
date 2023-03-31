@@ -81,6 +81,7 @@ impl Crate {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Metadata {
     pub wasm: Option<WasmMetadata>,
+    pub build: Option<BuildMetadata>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -229,4 +230,11 @@ pub struct WasmMetadata {
     pub targets: Vec<WasmTarget>,
     pub folder: Option<String>,
     pub docs: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BuildMetadata {
+    pub folder: Option<String>,
+    // pub targets: Vec<WasmTarget>,
+    // pub docs: Option<String>,
 }

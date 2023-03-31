@@ -91,11 +91,11 @@ macro_rules! log_state {
     )
 }
 
+pub use log_error;
 pub use log_info;
 pub use log_state;
 pub use log_trace;
 pub use log_warn;
-pub use log_error;
 
 #[allow(dead_code)]
 pub fn log_state_clear() {

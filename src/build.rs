@@ -86,7 +86,9 @@ impl Builder {
                                 .dir(target_folder)
                                 .run()?;
 
-                            todo!();
+                            cmd!("du", "-h", &archive_dest).run()?;
+
+                            log_info!("Build", "build complete: {crate_name} @ {version}");
                         }
 
                         if let Some(wasm) = metadata.wasm.as_ref() {

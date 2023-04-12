@@ -2,6 +2,7 @@ use crate::prelude::*;
 use crate::result::Result;
 use clap::{Parser, Subcommand};
 
+mod archive;
 mod build;
 mod check;
 mod context;
@@ -55,7 +56,10 @@ enum Action {
     /// Check all dependency versions against those published on crates.io
     Check,
     /// Build WASM package targets specified within cargo's `package.metadata.emanate.wasm`
-    Build,
+    Build {
+        #[clap(short, long)]
+        package: Option<Vec<String>>,
+    },
 }
 
 pub async fn async_main() -> Result<()> {
@@ -87,9 +91,9 @@ pub async fn async_main() -> Result<()> {
             checker.check().await?;
         }
 
-        Action::Build => {
+        Action::Build { package } => {
             let builder = Builder::new(ctx);
-            builder.build().await?;
+            builder.build(package).await?;
         }
     }
 

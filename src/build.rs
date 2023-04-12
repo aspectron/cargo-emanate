@@ -13,7 +13,7 @@ impl Builder {
         Self { ctx }
     }
 
-    pub async fn build(&self) -> Result<()> {
+    pub async fn build(&self, packages: Option<Vec<String>>) -> Result<()> {
         match &self.ctx {
             Context::Workspace(ctx) => {
                 let manifest_version = ctx.manifest.version()?;
@@ -21,6 +21,12 @@ impl Builder {
                 for crt in ctx.crates.iter() {
                     if let Some(metadata) = crt.metadata()?.as_ref() {
                         let crate_name = crt.package.name.clone();
+                        if let Some(packages) = &packages {
+                            if !packages.contains(&crate_name) {
+                                log_info!("Build", "...skipping {}", crate_name);
+                                continue;
+                            }
+                        }
                         let crate_name_snake = crate_name.to_case(Case::Snake);
                         // let crate_name_kebab = crate_name.to_case(Case::Kebab);
                         // TODO get version from crate and usee workspace as fallback
@@ -68,11 +74,16 @@ impl Builder {
                                 }
                             }
 
-                            let archive_src = format!("{crate_name}{extension}");
+                            let binary_filename = format!("{crate_name}{extension}");
+
+                            let archive_folder = target_folder
+                                .join(format!("{crate_name}-{version}-{platform}-{arch}"));
+                            fs_extra::dir::remove(&archive_folder)?;
+                            std::fs::create_dir_all(&archive_folder)?;
+                            let target_binary = archive_folder.join(&binary_filename);
+                            std::fs::copy(&target_folder.join(binary_filename), &target_binary)?;
 
                             let filename = format!("{crate_name}-{version}-{platform}-{arch}.zip");
-                            // let setup_folder = build.folder.clone().unwrap_or("setup".to_string());
-                            // let setup_folder = crt.folder.join(&setup_folder);
                             std::fs::create_dir_all(&setup_folder)?;
                             let archive_dest = setup_folder.join(filename);
 
@@ -81,10 +92,14 @@ impl Builder {
                                 std::fs::remove_file(&archive_dest)?;
                             }
 
-                            // println!("--> {} {} {} {} {} {}","zip", "-9", archive_dest.display(), ".", "-i", archive_src);
-                            cmd!("zip", "-9", &archive_dest, archive_src)
-                                .dir(target_folder)
-                                .run()?;
+                            compress_folder(
+                                &archive_folder,
+                                &archive_dest,
+                                Archive {
+                                    subfolder: Some(true),
+                                    ..Default::default()
+                                },
+                            )?;
 
                             cmd!("du", "-h", &archive_dest).run()?;
 
@@ -94,13 +109,19 @@ impl Builder {
                         if let Some(wasm) = metadata.wasm.as_ref() {
                             for wasm_target in wasm.targets.iter() {
                                 let target = wasm_target.target.to_string();
+                                let archive_folder =
+                                    target_folder.join(format!("{crate_name}-{version}-{target}"));
+                                fs_extra::dir::remove(&archive_folder)?;
+
                                 let result = cmd!(
                                     "wasm-pack",
                                     "build",
+                                    "--release",
                                     "--target",
                                     &target,
                                     "--out-dir",
-                                    &wasm_target.out_dir
+                                    &archive_folder,
+                                    // &wasm_target.out_dir
                                 )
                                 .dir(&crt.folder)
                                 .run();
@@ -111,19 +132,26 @@ impl Builder {
                                         let out_dir = PathBuf::from(&wasm_target.out_dir);
                                         let source_folder = crt.folder.join(&out_dir);
                                         let source_parent = source_folder.parent().unwrap_or_else(||panic!("unable to get parent directory from `out-dir`: '{}'",wasm_target.out_dir));
-                                        let archive_folder = out_dir
-                                            .file_name()
-                                            .unwrap_or_else(|| {
-                                                panic!(
-                                                    "unable to get file name from `out-dir`: '{}'",
-                                                    wasm_target.out_dir
-                                                )
-                                            })
-                                            .to_str()
-                                            .unwrap()
-                                            .to_string();
+                                        // let archive_folder = out_dir
+                                        //     .file_name()
+                                        //     .unwrap_or_else(|| {
+                                        //         panic!(
+                                        //             "unable to get file name from `out-dir`: '{}'",
+                                        //             wasm_target.out_dir
+                                        //         )
+                                        //     })
+                                        //     .to_str()
+                                        //     .unwrap()
+                                        //     .to_string();
                                         let filename =
                                             format!("{crate_name}-{version}-{target}.zip");
+
+                                        // let archive_folder = target_folder.join(format!("{crate_name}-{version}-{platform}-{arch}"));
+                                        // fs_extra::dir::remove(&archive_folder)?;
+                                        // std::fs::create_dir_all(&archive_folder)?;
+                                        // let target_binary = archive_folder.join(&binary_filename);
+                                        // std::fs::copy(&target_folder.join(binary_filename), &target_binary)?;
+
                                         // let setup_folder = wasm.folder.clone().unwrap_or("setup".to_string());
                                         // let setup_folder = crt.folder.join(&setup_folder);
                                         std::fs::create_dir_all(&setup_folder)?;
@@ -138,9 +166,18 @@ impl Builder {
                                             std::fs::remove_file(&archive_dest)?;
                                         }
 
-                                        cmd!("zip", "-r", "-9", &archive_dest, archive_folder)
-                                            .dir(source_parent)
-                                            .run()?;
+                                        compress_folder(
+                                            &archive_folder,
+                                            &archive_dest,
+                                            Archive {
+                                                subfolder: Some(true),
+                                                ..Default::default()
+                                            },
+                                        )?;
+
+                                        // cmd!("zip", "-r", "-9", &archive_dest, archive_folder)
+                                        //     .dir(source_parent)
+                                        //     .run()?;
 
                                         let main_file =
                                             source_folder.join(format!("{crate_name_snake}.js"));
@@ -151,6 +188,7 @@ impl Builder {
                                             .join(docs_folder)
                                             .join(format!("{crate_name}-{version}-{target}"));
 
+                                        log_info!("Docs", "generating 'jsdoc'");
                                         cmd!(
                                             "jsdoc",
                                             "--destination",

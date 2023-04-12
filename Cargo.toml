@@ -1,6 +1,6 @@
 [package]
 name = "cargo-emanate"
-version = "0.3.2"
+version = "0.4.0"
 edition = "2021"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/aspectron/cargo-emanate"
@@ -28,3 +28,9 @@ toml = "0.7.1"
 toml_edit = "0.19.1"
 convert_case = "0.6.0"
 cfg-if = "1.0.0"
+
+flate2 = "1.0.25"
+fs_extra = "1.2.0"
+walkdir = "2.3.2"
+zip = "0.6.4"
+tar = "0.4.38"

@@ -59,14 +59,15 @@ impl Publisher {
                                 if let Some(v) = version {
                                     let key = format!("{dep}/{v}");
                                     if !new_publish_list.contains_key(&key) {
-                                        let version =
-                                            crates_io.get_latest_version(dep).await?.to_string();
-                                        if version != v {
-                                            // TODO version compare
-                                            log_error!("Error", "{dep} => unable to find version from crates_io ({v}!={version})");
-                                        } else {
-                                            log_info!("", "{dep} => {v}");
-                                        }
+                                        log_error!("Error", "{dep} => unable to find {dep}/{v}");
+                                        // let version =
+                                        //     crates_io.get_latest_version(dep).await?.to_string();
+                                        // if version != v {
+                                        //     // TODO version compare
+                                        //     log_error!("Error", "{dep} => unable to find version from crates_io ({v}!={version})");
+                                        // } else {
+                                        //     log_info!("", "{dep} => {v}");
+                                        // }
                                     } else {
                                         log_info!("", "{dep} => {v}");
                                     }

@@ -33,46 +33,32 @@ impl Publisher {
                             }
                             log_info!("Dependencies", "");
                             for (dep, dep_info) in &crt.dependencies {
-                                let version = match dep_info.version() {
-                                    Ok(v) => Some(v.to_string()),
-                                    Err(e) => {
-                                        match e {
-                                            Error::WorkspaceCrate => {
-                                                //Some("TODO".to_string())
-                                                if let Some(info) =
-                                                    ctx.manifest.workspace.dependencies.get(dep)
-                                                {
-                                                    if let Ok(v) = info.version() {
-                                                        Some(v.to_string())
-                                                    } else {
-                                                        None
-                                                    }
-                                                } else {
-                                                    None
-                                                }
-                                            }
-                                            _ => None,
-                                        }
-                                    }
-                                };
-
-                                if let Some(v) = version {
+                                if let Some(v) = dep_info.find_version(dep, ctx) {
                                     let key = format!("{dep}/{v}");
                                     if !new_publish_list.contains_key(&key) {
                                         log_error!("Error", "{dep} => unable to find {dep}/{v}");
-                                        // let version =
-                                        //     crates_io.get_latest_version(dep).await?.to_string();
-                                        // if version != v {
-                                        //     // TODO version compare
-                                        //     log_error!("Error", "{dep} => unable to find version from crates_io ({v}!={version})");
-                                        // } else {
-                                        //     log_info!("", "{dep} => {v}");
-                                        // }
                                     } else {
                                         log_info!("", "{dep} => {v}");
                                     }
                                 } else {
                                     log_error!("Error", "{dep} => unable to get version");
+                                }
+                            }
+
+                            //println!("crt.dev_dependencies: {:?}", crt.dev_dependencies);
+                            for (dep, dep_info) in &crt.dev_dependencies {
+                                if let Some(v) = dep_info.find_version(dep, ctx) {
+                                    let key = format!("{dep}/{v}");
+                                    if !new_publish_list.contains_key(&key) {
+                                        log_error!(
+                                            "Error",
+                                            "dev:{dep} => unable to find {dep}/{v}"
+                                        );
+                                    } else {
+                                        log_info!("", "dev:{dep} => {v}");
+                                    }
+                                } else {
+                                    log_error!("Error", "dev:{dep} => unable to get version");
                                 }
                             }
 

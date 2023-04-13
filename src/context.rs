@@ -137,9 +137,11 @@ impl WorkspaceContext {
             }
         });
 
-        crates
-            .iter_mut()
-            .for_each(|crt| crt.dependencies.retain(|name, _| projects.contains(name)));
+        crates.iter_mut().for_each(|crt| {
+            crt.dependencies.retain(|name, _| projects.contains(name));
+            crt.dev_dependencies
+                .retain(|name, _| projects.contains(name))
+        });
 
         let mut publish_list = vec![];
         let mut publish_name_list = vec![];
@@ -159,9 +161,15 @@ impl WorkspaceContext {
                     .keys()
                     .map(|c| c.to_string())
                     .collect::<Vec<String>>();
+                let mut dev_deps = crt
+                    .dev_dependencies
+                    .keys()
+                    .map(|c| c.to_string())
+                    .collect::<Vec<String>>();
                 deps.retain(|dep| !publish_name_list.contains(dep));
+                dev_deps.retain(|dep| !publish_name_list.contains(dep));
 
-                if deps.is_empty() {
+                if deps.is_empty() && dev_deps.is_empty() {
                     publish_list.push(crt.clone());
                     publish_name_list.push(crt.name().to_string());
                 }

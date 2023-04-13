@@ -15,6 +15,8 @@ pub struct Crate {
     pub package: Package,
     // #[serde(skip)]
     pub dependencies: Dependencies,
+    #[serde(skip, rename(deserialize = "dev-dependencies"))]
+    pub dev_dependencies: Dependencies,
 }
 
 impl Crate {
@@ -22,6 +24,16 @@ impl Crate {
         let toml = async_std::fs::read_to_string(&file).await?;
         let mut crt: Crate = toml::from_str(&toml)?;
         let table: Value = toml::from_str(&toml)?;
+        //println!("toml : {:?}, {}", file, crt.dev_dependencies.len());
+        if let Some(dev_dependencies) = table.get("dev-dependencies") {
+            //println!("dev-dependencies.len : {:?}", dev_dependencies);
+            if let Some(deps) = dev_dependencies.as_table() {
+                for (k3, v3) in deps.iter() {
+                    crt.dev_dependencies
+                        .insert(k3.clone(), Dependency(v3.clone()));
+                }
+            }
+        }
 
         let targets = table.get("target");
         if let Some(targets) = targets {
@@ -33,6 +45,14 @@ impl Crate {
                                 if let Some(deps) = v2.as_table() {
                                     for (k3, v3) in deps.iter() {
                                         crt.dependencies.insert(k3.clone(), Dependency(v3.clone()));
+                                    }
+                                }
+                            } else if k2 == "dev-dependencies" {
+                                //println!("dev-dependencies: v2: {:?}", v2);
+                                if let Some(deps) = v2.as_table() {
+                                    for (k3, v3) in deps.iter() {
+                                        crt.dev_dependencies
+                                            .insert(k3.clone(), Dependency(v3.clone()));
                                     }
                                 }
                             }
@@ -154,6 +174,26 @@ impl Dependency {
                 }
             }
             _ => Err(error!("dependency is not a string or a table")),
+        }
+    }
+
+    pub fn find_version(&self, dep: &str, ctx: &Arc<WorkspaceContext>) -> Option<String> {
+        match self.version() {
+            Ok(v) => Some(v.to_string()),
+            Err(e) => match e {
+                Error::WorkspaceCrate => {
+                    if let Some(info) = ctx.manifest.workspace.dependencies.get(dep) {
+                        if let Ok(v) = info.version() {
+                            Some(v.to_string())
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            },
         }
     }
 }

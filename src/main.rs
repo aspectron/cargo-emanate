@@ -42,8 +42,10 @@ struct Args {
     /// Action to execute
     #[clap(subcommand)]
     action: Action,
-    // #[clap(short, long)]
-    // verbose : bool,
+
+    /// Perform checks without actual processing.
+    #[clap(short, long)]
+    dry_run: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -64,7 +66,11 @@ enum Action {
 
 pub async fn async_main() -> Result<()> {
     let args = Cmd::parse();
-    let Cmd::Args(Args { action, location }) = args;
+    let Cmd::Args(Args {
+        action,
+        location,
+        dry_run,
+    }) = args;
     let location = manifest::locate(location).await?;
     let ctx = Context::load(&location).await?;
 
@@ -83,7 +89,7 @@ pub async fn async_main() -> Result<()> {
 
         Action::Publish => {
             let publisher = Publisher::new(ctx);
-            publisher.publish().await?;
+            publisher.publish(dry_run).await?;
         }
 
         Action::Check => {

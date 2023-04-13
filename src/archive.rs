@@ -194,7 +194,7 @@ pub fn compress_folder(
         dst_file.file_name().unwrap().to_str().unwrap(),
         path,
         &mut it.filter_map(|e| e.ok()),
-        prefix.into(),
+        prefix,
         file,
         method,
     )?;
@@ -204,18 +204,13 @@ pub fn compress_folder(
 
 // -----------------------------------------------------------------------------
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub enum Algorithm {
     STORE,
     BZIP2,
+    #[default]
     DEFLATE,
     ZSTD,
-}
-
-impl Default for Algorithm {
-    fn default() -> Algorithm {
-        Algorithm::DEFLATE
-    }
 }
 
 impl From<Algorithm> for zip::CompressionMethod {

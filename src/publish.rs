@@ -24,7 +24,7 @@ impl Publisher {
                     if version == manifest_version {
                         log_info!("Skipping", "{project} {manifest_version} -> {version}");
                     } else {
-                        log_info!("Publishing", "{project} {manifest_version} -> {version}");
+                        log_info!("Publishing", "{project} {version} -> {manifest_version}");
                         if dry_run {
                             if crt.dependencies.is_empty() {
                                 let key = format!("{project}/{manifest_version}");
@@ -73,7 +73,7 @@ impl Publisher {
                             .run();
                         match result {
                             Ok(_) => {
-                                log_info!("Success", "published {project} @ {version}");
+                                log_info!("Success", "published {project} @ {manifest_version}");
                             }
                             Err(err) => {
                                 println!("\n{err}\n");

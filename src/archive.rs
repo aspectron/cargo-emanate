@@ -206,20 +206,20 @@ pub fn compress_folder(
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub enum Algorithm {
-    STORE,
-    BZIP2,
+    Store,
+    BZip2,
     #[default]
-    DEFLATE,
-    ZSTD,
+    Deflate,
+    ZStd,
 }
 
 impl From<Algorithm> for zip::CompressionMethod {
     fn from(algorithm: Algorithm) -> zip::CompressionMethod {
         match algorithm {
-            Algorithm::STORE => zip::CompressionMethod::Stored,
-            Algorithm::BZIP2 => zip::CompressionMethod::Bzip2,
-            Algorithm::DEFLATE => zip::CompressionMethod::Deflated,
-            Algorithm::ZSTD => zip::CompressionMethod::Zstd,
+            Algorithm::Store => zip::CompressionMethod::Stored,
+            Algorithm::BZip2 => zip::CompressionMethod::Bzip2,
+            Algorithm::Deflate => zip::CompressionMethod::Deflated,
+            Algorithm::ZStd => zip::CompressionMethod::Zstd,
         }
     }
 }
@@ -227,10 +227,10 @@ impl From<Algorithm> for zip::CompressionMethod {
 impl ToString for Algorithm {
     fn to_string(&self) -> String {
         match self {
-            Algorithm::STORE => "STORE",
-            Algorithm::BZIP2 => "BZIP2",
-            Algorithm::DEFLATE => "DEFLATE",
-            Algorithm::ZSTD => "ZSTD",
+            Algorithm::Store => "STORE",
+            Algorithm::BZip2 => "BZIP2",
+            Algorithm::Deflate => "DEFLATE",
+            Algorithm::ZStd => "ZSTD",
         }
         .into()
     }

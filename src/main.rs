@@ -10,6 +10,7 @@ mod crates;
 mod error;
 mod log;
 mod manifest;
+mod owner;
 mod prelude;
 mod publish;
 mod result;
@@ -62,6 +63,13 @@ enum Action {
         #[clap(short, long)]
         package: Option<Vec<String>>,
     },
+    /// Add or remove a crate owner on crates.io
+    Owner {
+        #[clap(long)]
+        add: Option<String>,
+        #[clap(long)]
+        remove: Option<String>,
+    },
 }
 
 pub async fn async_main() -> Result<()> {
@@ -100,6 +108,20 @@ pub async fn async_main() -> Result<()> {
         Action::Build { package } => {
             let builder = Builder::new(ctx);
             builder.build(package).await?;
+        }
+
+        Action::Owner { add, remove } => {
+            let (action, username) = if let Some(add) = add {
+                (owner::Action::Add, add)
+            } else if let Some(remove) = remove {
+                (owner::Action::Remove, remove)
+            } else {
+                return Err("Please specify either --add or --remove".into());
+            };
+
+            let owner = Owner::new(ctx); //, add, remove);
+            owner.change(action, username).await?;
+            // owner.run().await?;
         }
     }
 

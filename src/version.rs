@@ -3,6 +3,7 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::str::FromStr;
 use toml_edit::{value, Document};
+// use regex::Regex;
 
 #[derive(Debug, Clone)]
 pub struct Version {
@@ -90,7 +91,9 @@ impl FromStr for Version {
             } else {
                 None
             };
-            let v = parts[0].split('.').collect::<Vec<_>>();
+            
+            let version = parts[0].replace(&['='][..], "");
+            let v = version.split('.').collect::<Vec<_>>();
             if v.len() != 3 {
                 // log_warn!("Warning","detected non-fixed version: `{s}`");
                 return Err(Error::NonFixedVersion(s.to_string()));
